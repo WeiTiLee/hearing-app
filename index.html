@@ -282,10 +282,16 @@
 <body>
     <div class="container">
         <h1 class="title">聽力測試診斷計算器</h1>
-        
         <div class="age-input-group">
-            <div class="input-label">請輸入您的年齡</div>
-            <input type="text" class="input-field" id="ageInput" maxlength="3" onfocus="currentInputIndex = -1; setActiveInput();">
+            <div class="input-label">請選擇年齡範圍</div>
+            <div style="display:flex; gap:20px; justify-content:center;">
+                <label>
+                    <input type="radio" name="ageGroup" value="adult"> 六歲以上
+                </label>
+                <label>
+                    <input type="radio" name="ageGroup" value="child"> 未滿六歲
+                </label>
+            </div>
         </div>
 
         <div class="input-section">
@@ -383,13 +389,13 @@
             </div>
             <hr style="border: 1px solid #ccc; margin: 15px 0;">
             <div class="diagnosis-code" id="diagnosisCode">等待輸入</div>
-            <div class="diagnosis-description" id="diagnosisDescription">請輸入年齡及所有8個聽力數值後進行診斷</div>
+            <div class="diagnosis-description" id="diagnosisDescription">請選擇年齡範圍及輸入所有8個聽力數值後進行診斷</div>
         </div>
 
         <!-- 開發者信息 -->
         <div class="developer-info">
-            <div>開發者 : 魏振庭</div>
-            <div><a href="https://github.com/username" target="_blank">https://github.com/a85009546</a></div>
+            <div>開發者 : 魏振庭 共同開發者：李威締</div>
+            <div><a href="https://github.com/a85009546/" target="_blank">https://github.com/a85009546/</a></div>
         </div>
     </div>
 
@@ -409,7 +415,6 @@
         const inputLabels = ['右耳 500Hz', '右耳 1000Hz', '右耳 2000Hz', '右耳 4000Hz', '左耳 500Hz', '左耳 1000Hz', '左耳 2000Hz', '左耳 4000Hz'];
         const messageBox = document.getElementById('messageBox');
         const messageText = document.getElementById('messageText');
-        const ageInput = document.getElementById('ageInput');
 
         // 顯示訊息彈窗
         function showMessage(text) {
@@ -431,7 +436,7 @@
         // 更新當前輸入提示
         function updateCurrentInput() {
             if (currentInputIndex === -1) {
-                document.querySelector('.current-input').textContent = '當前輸入：年齡';
+                document.querySelector('.current-input').textContent = '請先選擇年齡範圍';
             } else if (currentInputIndex < inputLabels.length) {
                 document.querySelector('.current-input').textContent = `當前輸入：${inputLabels[currentInputIndex]}`;
             } else {
@@ -442,15 +447,12 @@
         // 設置當前輸入框的高亮
         function setActiveInput() {
             // 移除所有高亮
-            ageInput.classList.remove('active');
             inputFields.forEach(id => {
                 document.getElementById(id).classList.remove('active');
             });
-            
+
             // 添加當前輸入框的高亮
-            if (currentInputIndex === -1) {
-                ageInput.classList.add('active');
-            } else if (currentInputIndex < inputFields.length) {
+            if (currentInputIndex >= 0 && currentInputIndex < inputFields.length) {
                 document.getElementById(inputFields[currentInputIndex]).classList.add('active');
             }
         }
@@ -458,9 +460,7 @@
         // 輸入數字
         function inputNumber(num) {
             let currentField;
-            if (currentInputIndex === -1) {
-                currentField = ageInput;
-            } else if (currentInputIndex < inputFields.length) {
+            if  (currentInputIndex < inputFields.length) {
                 currentField = document.getElementById(inputFields[currentInputIndex]);
             } else {
                 showMessage('所有輸入欄位都已填寫完畢。');
@@ -476,9 +476,7 @@
         // 刪除數字
         function deleteNumber() {
             let currentField;
-            if (currentInputIndex === -1) {
-                currentField = ageInput;
-            } else if (currentInputIndex < inputFields.length) {
+            if (currentInputIndex < inputFields.length) {
                 currentField = document.getElementById(inputFields[currentInputIndex]);
             } else {
                 return;
@@ -489,13 +487,9 @@
         // 下一個輸入框
         function nextInput() {
             if (currentInputIndex === -1) {
-                if (ageInput.value !== '') {
-                    currentInputIndex = 0;
-                    updateCurrentInput();
-                    setActiveInput();
-                } else {
-                    showMessage('請先輸入年齡。');
-                }
+                currentInputIndex = 0; // 直接跳到第一個耳朵輸入框
+                updateCurrentInput();
+                setActiveInput();
             } else if (currentInputIndex < inputFields.length - 1) {
                 currentInputIndex++;
                 updateCurrentInput();
@@ -507,7 +501,6 @@
 
         // 清除所有數值
         function clearAll() {
-            ageInput.value = '';
             inputFields.forEach(id => {
                 document.getElementById(id).value = '';
             });
@@ -527,16 +520,21 @@
 
         // 診斷計算邏輯
         function calculate() {
-            const age = parseInt(ageInput.value);
+            // 讀取年齡範圍
+            const ageGroup = document.querySelector('input[name="ageGroup"]:checked');
+            if (!ageGroup) {
+                showMessage('請先選擇年齡範圍');
+                return;
+            }
+            const age = (ageGroup.value === 'adult') ? 6 : 5; // 六歲以上用 6，未滿六歲用 5
             const values = inputFields.map(id => {
-                const value = document.getElementById(id).value;
-                return value === '' ? 0 : parseFloat(value);
-                // 🔧 大於 110 的值，直接當成 110
-                if (num > 110) num = 110;
+                let num = parseFloat(document.getElementById(id).value);
+                if (isNaN(num)) num = 0;
+                if (num > 110) num = 110;  // 超過 110 就當 110
                 return num;
             });
             
-            const allFilled = inputFields.every(id => document.getElementById(id).value !== '') && ageInput.value !== '';
+            const allFilled = inputFields.every(id => document.getElementById(id).value !== '');
             
             if (!allFilled) {
                 const filledCount = inputFields.filter(id => document.getElementById(id).value !== '').length;
@@ -602,11 +600,11 @@
             });
         });
 
-        // 針對年齡輸入框的點擊事件
-        ageInput.addEventListener('click', () => {
-            currentInputIndex = -1;
-            updateCurrentInput();
-            setActiveInput();
+        // 監聽年齡選擇變化，自動重新計算
+        document.querySelectorAll('input[name="ageGroup"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                calculate();
+            });
         });
 
         // 初始化程式
@@ -614,12 +612,5 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
 
 
